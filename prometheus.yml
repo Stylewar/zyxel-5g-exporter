@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  scrape_timeout: 10s
+
+scrape_configs:
+  # Cellwan Exporter
+  - job_name: 'cellwan'
+    static_configs:
+      - targets: ['cellwan-exporter:9101']
+        labels:
+          instance: 'zyxel-5g-router'
+          environment: 'production'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
