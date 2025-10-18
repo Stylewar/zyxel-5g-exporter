@@ -20,9 +20,9 @@ A complete monitoring solution for Zyxel 5G routers that collects cellular WAN s
 - 🔒 Privacy-focused: No personal identifiable information collected
 - 💚 Health checks included
 
-## Quick Start (Full Stack)
+## Quick Start
 
-This will start the exporter, Prometheus, and Grafana:
+This will start the zyxel-cellwan-exporter:
 
 1. **Clone and setup**:
 ```bash
@@ -50,25 +50,9 @@ docker-compose up -d
 ```
 
 5. **Access the services**:
-   - **Grafana**: http://localhost:3000 (admin/admin)
-   - **Prometheus**: http://localhost:9090
    - **Exporter Metrics**: http://localhost:9101/metrics
 
-## Quick Start (Exporter Only)
-
-If you already have Prometheus/Grafana running, use the exporter-only configuration:
-
-```bash
-# 1. Setup
-cp .env.example .env
-# Edit .env with your credentials
-
-# 2. Start exporter only
-docker-compose -f docker-compose.exporter.yml up -d
-
-# 3. Access metrics
-# Exporter: http://localhost:9101/metrics
-```
+6. Prometheus scrape config:## Quick Start (Exporter Only)
 
 Then add to your existing `prometheus.yml`:
 ```yaml
@@ -178,8 +162,6 @@ python cellwan_exporter.py
 | `EXPORTER_PORT` | Prometheus exporter port | 9101 |
 | `EXPORTER_IP` | IP to bind exporter | 0.0.0.0 |
 | `SCRAPE_INTERVAL` | Seconds between scrapes | 30 |
-| `GRAFANA_USER` | Grafana admin username | admin |
-| `GRAFANA_PASSWORD` | Grafana admin password | admin |
 
 ## Exposed Metrics
 
