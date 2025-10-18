@@ -310,21 +310,14 @@ def update_metrics(data):
 def fetch_cellwan_status(host, user, password):
     """Fetch cellwan_status via SSH"""
     try:
-        # Use sshpass with proper SSH options to suppress warnings and handle authentication
-        # Some Zyxel routers require PTY allocation, using -tt forces it
-        cmd = [
-            'sshpass', '-p', password,
-            'ssh',
-            '-tt',  # Force PTY allocation (required by some routers)
-            '-o', 'StrictHostKeyChecking=no',
-            '-o', 'UserKnownHostsFile=/dev/null',
-            '-o', 'LogLevel=ERROR',
-            '-o', 'ConnectTimeout=10',
-            f'{user}@{host}',
-            'cfg cellwan_status get ; exit'  # Explicit exit to prevent hanging
-        ]
+        # Zyxel routers require PTY allocation but we can't use -tt with capture_output
+        # Solution: Use shell with heredoc to send command via stdin
+        cmd = f'''sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=10 {user}@{host} << 'SSHEOF'
+cfg cellwan_status get
+exit
+SSHEOF'''
         print(f"DEBUG: Executing SSH command to {host}...", file=sys.stderr)
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
         
         if result.returncode == 0:
             print(f"DEBUG: SSH command successful, received {len(result.stdout)} bytes", file=sys.stderr)
