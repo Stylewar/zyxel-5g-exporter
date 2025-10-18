@@ -310,8 +310,19 @@ def update_metrics(data):
 def fetch_cellwan_status(host, user, password):
     """Fetch cellwan_status via SSH"""
     try:
-        cmd = f"printf 'cfg cellwan_status get\\nexit\\n' | sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -T {user}@{host}"
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
+        # Use sshpass with proper SSH options to suppress warnings and handle authentication
+        cmd = [
+            'sshpass', '-p', password,
+            'ssh',
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-o', 'LogLevel=ERROR',  # Suppress warnings
+            '-o', 'BatchMode=no',     # Allow password authentication
+            '-T',                     # Disable pseudo-terminal allocation
+            f'{user}@{host}',
+            'cfg cellwan_status get'
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         
         if result.returncode == 0:
             return result.stdout

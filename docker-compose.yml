@@ -4,9 +4,13 @@ version: '3.8'
 # Use this if you already have Prometheus/Grafana running elsewhere
 
 services:
-  cellwan-exporter:
-    build: .
-    container_name: cellwan-exporter
+  zyxel-cellwan-exporter:
+    build:
+      context: .
+      tags:
+        - zyxel-cellwan-exporter:latest
+    image: zyxel-cellwan-exporter:latest
+    container_name: zyxel-cellwan-exporter
     restart: unless-stopped
     ports:
       - "9101:9101"
