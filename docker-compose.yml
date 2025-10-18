@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Exporter Only
 # Use this if you already have Prometheus/Grafana running elsewhere
 
