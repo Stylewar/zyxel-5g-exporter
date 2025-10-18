@@ -13,7 +13,7 @@ services:
     ports:
       - "9101:9101"
     env_file:
-      # Set environment values in a .env file. see .env.exmaple
+      # Set environment values in a .env file. see .env.example
       - .env
     networks:
       - monitoring

@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+# Disable Python output buffering for Docker logs
+ENV PYTHONUNBUFFERED=1
+
 # Install sshpass
 RUN apt-get update && \
     apt-get install -y sshpass openssh-client && \

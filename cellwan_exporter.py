@@ -5,6 +5,7 @@ Collects cellular WAN status via SSH and exposes metrics for Prometheus
 """
 
 import argparse
+import logging
 import os
 import re
 import subprocess
@@ -17,8 +18,14 @@ from dotenv import load_dotenv
 # Load environment variables from .env file if present
 load_dotenv()
 
-# Debug mode configuration
-DEBUG = os.getenv('DEBUG', 'false').lower() in ('true', '1', 'yes')
+# Configure logging
+log_level = logging.DEBUG if os.getenv('DEBUG', 'false').lower() in ('true', '1', 'yes') else logging.INFO
+logging.basicConfig(
+    level=log_level,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 # Define Prometheus metrics
 cellwan_info = Info('cellwan', 'Cellular WAN information')
@@ -319,45 +326,42 @@ def fetch_cellwan_status(host, user, password):
 cfg cellwan_status get
 exit
 SSHEOF'''
-        if DEBUG:
-            print(f"DEBUG: Executing SSH command to {host}...", file=sys.stderr)
+        logger.debug(f"Executing SSH command to {host}...")
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
 
         if result.returncode == 0:
-            if DEBUG:
-                print(f"DEBUG: SSH command successful, received {len(result.stdout)} bytes", file=sys.stderr)
+            logger.debug(f"SSH command successful, received {len(result.stdout)} bytes")
             return result.stdout
         else:
-            print(f"ERROR: SSH command failed with return code {result.returncode}", file=sys.stderr)
-            if DEBUG:
-                print(f"STDERR: {result.stderr}", file=sys.stderr)
-                print(f"STDOUT: {result.stdout}", file=sys.stderr)
+            logger.error(f"SSH command failed with return code {result.returncode}")
+            logger.debug(f"STDERR: {result.stderr}")
+            logger.debug(f"STDOUT: {result.stdout}")
             return None
     except subprocess.TimeoutExpired as e:
-        print(f"ERROR: SSH command timed out after {e.timeout}s", file=sys.stderr)
-        print(f"Command: {' '.join(cmd[:2])} ssh ... {user}@{host} 'cfg cellwan_status get'", file=sys.stderr)
+        logger.error(f"SSH command timed out after {e.timeout}s")
+        logger.debug(f"Command: sshpass ssh ... {user}@{host} 'cfg cellwan_status get'")
         return None
     except Exception as e:
-        print(f"EXCEPTION during SSH: {type(e).__name__}: {e}", file=sys.stderr)
+        logger.error(f"Exception during SSH: {type(e).__name__}: {e}")
         return None
 
 
 def collect_metrics(host, user, password, interval):
     """Continuously collect metrics at specified interval"""
-    print(f"Starting metric collection every {interval} seconds...")
-    
+    logger.info(f"Starting metric collection every {interval} seconds...")
+
     while True:
         try:
             output = fetch_cellwan_status(host, user, password)
             if output:
                 data = parse_cellwan_status(output)
                 update_metrics(data)
-                print(f"Metrics updated successfully at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                logger.info("Metrics updated successfully")
             else:
-                print(f"Failed to fetch data at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                logger.warning("Failed to fetch data")
         except Exception as e:
-            print(f"Error updating metrics: {e}", file=sys.stderr)
-        
+            logger.error(f"Error updating metrics: {e}")
+
         time.sleep(interval)
 
 
@@ -410,17 +414,17 @@ Environment variables (can also be set in .env file):
     # Validate required parameters
     if not all([host, user, password]):
         parser.error('Host, user, and password must be provided via arguments or environment variables')
-    
+
     # Start Prometheus HTTP server
-    print(f"Starting Prometheus exporter on {args.listen}:{args.port}")
+    logger.info(f"Starting Prometheus exporter on {args.listen}:{args.port}")
     start_http_server(args.port, addr=args.listen)
-    print(f"zyxel_cellwan_exporter listening on {args.listen}:{args.port}")
+    logger.info(f"zyxel_cellwan_exporter listening on {args.listen}:{args.port}")
 
     # Start metric collection
     try:
         collect_metrics(host, user, password, args.interval)
     except KeyboardInterrupt:
-        print("\nExporter stopped by user")
+        logger.info("Exporter stopped by user")
         sys.exit(0)
 
 
