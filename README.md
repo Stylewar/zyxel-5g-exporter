@@ -58,6 +58,32 @@ docker-compose up -d
 
 ## Quick Start (Exporter Only)
 
+If you already have Prometheus/Grafana running, use the exporter-only configuration:
+
+```bash
+# 1. Setup
+cp .env.example .env
+# Edit .env with your credentials
+
+# 2. Start exporter only
+docker-compose -f docker-compose.exporter.yml up -d
+
+# 3. Access metrics
+# Exporter: http://localhost:9101/metrics
+```
+
+Then add to your existing `prometheus.yml`:
+```yaml
+scrape_configs:
+  - job_name: 'cellwan'
+    static_configs:
+      - targets: ['cellwan-exporter:9101']
+```
+
+See [DOCKER_COMPOSE_GUIDE.md](DOCKER_COMPOSE_GUIDE.md) for detailed deployment options.
+
+## Quick Start (Exporter Only)
+
 If you already have Prometheus/Grafana or want just the exporter:
 
 ### Using Python
