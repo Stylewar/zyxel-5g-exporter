@@ -1,35 +1,57 @@
-.PHONY: help build run stop logs clean test
+.PHONY: help build run stop logs clean test install
 
 help:
 	@echo "Zyxel 5G Router Prometheus Exporter"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  build    - Build Docker image"
-	@echo "  run      - Start exporter container"
-	@echo "  stop     - Stop exporter container"
-	@echo "  restart  - Restart exporter container"
-	@echo "  logs     - Show container logs"
-	@echo "  clean    - Remove container and image"
-	@echo "  test     - Test the exporter endpoint"
-	@echo "  install  - Install Python dependencies"
+	@echo "  build         - Build Docker image"
+	@echo "  run           - Start full stack (exporter + prometheus + grafana)"
+	@echo "  run-exporter  - Start exporter only"
+	@echo "  stop          - Stop all services"
+	@echo "  stop-exporter - Stop exporter only"
+	@echo "  restart       - Restart all services"
+	@echo "  logs          - Show container logs (full stack)"
+	@echo "  logs-exporter - Show exporter logs only"
+	@echo "  clean         - Remove containers and images"
+	@echo "  test          - Test the exporter endpoint"
+	@echo "  install       - Install Python dependencies"
+	@echo ""
+	@echo "Docker Compose Files:"
+	@echo "  docker-compose.yml          - Full stack (exporter + prometheus + grafana)"
+	@echo "  docker-compose.exporter.yml - Exporter only"
 
 build:
 	docker-compose build
 
 run:
+	@echo "Starting full stack (exporter + prometheus + grafana)..."
 	docker-compose up -d
+
+run-exporter:
+	@echo "Starting exporter only..."
+	docker-compose -f docker-compose.exporter.yml up -d
 
 stop:
 	docker-compose down
 
+stop-exporter:
+	docker-compose -f docker-compose.exporter.yml down
+
 restart:
 	docker-compose restart
+
+restart-exporter:
+	docker-compose -f docker-compose.exporter.yml restart
 
 logs:
 	docker-compose logs -f
 
+logs-exporter:
+	docker-compose -f docker-compose.exporter.yml logs -f
+
 clean:
 	docker-compose down -v
+	docker-compose -f docker-compose.exporter.yml down -v
 	docker rmi cellwan-exporter 2>/dev/null || true
 
 test:
@@ -45,3 +67,17 @@ dev-run:
 
 dev-test:
 	python -m pytest tests/ -v 2>/dev/null || echo "No tests found"
+
+# Status checks
+status:
+	@echo "=== Full Stack Status ==="
+	@docker-compose ps
+	@echo ""
+	@echo "=== Exporter Only Status ==="
+	@docker-compose -f docker-compose.exporter.yml ps
+
+ps:
+	docker-compose ps
+
+ps-exporter:
+	docker-compose -f docker-compose.exporter.yml ps

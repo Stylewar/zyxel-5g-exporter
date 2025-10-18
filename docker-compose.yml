@@ -1,5 +1,8 @@
 version: '3.8'
 
+# Full Stack: Exporter + Prometheus + Grafana
+# Use this for a complete monitoring solution
+
 services:
   # Cellwan Exporter
   cellwan-exporter:

@@ -1,0 +1,34 @@
+version: '3.8'
+
+# Exporter Only
+# Use this if you already have Prometheus/Grafana running elsewhere
+
+services:
+  cellwan-exporter:
+    build: .
+    container_name: cellwan-exporter
+    restart: unless-stopped
+    ports:
+      - "9101:9101"
+    environment:
+      - ZYXEL_HOST=${ZYXEL_HOST}
+      - ZYXEL_USER=${ZYXEL_USER}
+      - ZYXEL_PASSWORD=${ZYXEL_PASSWORD}
+      - EXPORTER_PORT=9101
+      - EXPORTER_IP=0.0.0.0
+      - SCRAPE_INTERVAL=${SCRAPE_INTERVAL:-30}
+    # Uncomment to use env file instead of environment variables
+    # env_file:
+    #   - .env
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9101/').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+networks:
+  monitoring:
+    driver: bridge
