@@ -1,0 +1,90 @@
+Cellular WAN Status:
+IMEI:                          123456789012345
+Module Software Version:       RG520FEBDER03A01M8G_OCPU_ZYXEL
+Status:                        Up
+Current Access Technology:     NR5G-NSA
+Network In Use:                Current_o2 - de_NR5G-NSA_26203
+Current Band:                  LTE_BC3
+Cell ID:                       26177578
+Physical Cell ID:              148
+eNodeB ID:                     102256
+UL Bandwidth (MHz):            20
+DL Bandwidth (MHz):            20
+RFCN:                          1600
+RSSI:                          -41
+RSRP:                          -76
+RSRQ:                          -13
+RSCP:                          N/A
+EcNo:                          N/A
+SINR:                          22
+TAC:                           51541
+LAC:                           N/A
+RAC:                           N/A
+BSIC:                          N/A
+CQI:                           12
+MCS:                           18
+RI:                            1
+PMI:                           2
+Current CA combination:        BC3,BC7,BC1,BC20,N28
+
+NR5G-NSA Information:
+MCC:                           262
+NNC:                           03
+Physical Cell ID:              415
+Band:                          NR5G_N28
+RFCN:                          152690
+RSRP:                          -67
+RSRQ:                          -11
+SINR:                          30
+DL Bandwidth (MHz):            10
+
+SCC 1 information:
+Physical Cell ID:              128
+RFCN:                          3350
+Band:                          LTE_BC7
+UL Configured:                 0
+UL(A)RFCN:                     N/A
+UplinkBandwidth (MHz):         N/A
+DownlinkBandwidth (MHZ):       20
+RSSI:                          -56
+RSRP:                          -88
+RSRQ:                          -13
+SINR:                          19
+
+SCC 2 information:
+Physical Cell ID:              280
+RFCN:                          300
+Band:                          LTE_BC1
+UL Configured:                 0
+UL(A)RFCN:                     N/A
+UplinkBandwidth (MHz):         N/A
+DownlinkBandwidth (MHZ):       20
+RSSI:                          -46
+RSRP:                          -78
+RSRQ:                          -12
+SINR:                          17
+
+SCC 3 information:
+Physical Cell ID:              82
+RFCN:                          6200
+Band:                          LTE_BC20
+UL Configured:                 0
+UL(A)RFCN:                     N/A
+UplinkBandwidth (MHz):         N/A
+DownlinkBandwidth (MHZ):       10
+RSSI:                          -45
+RSRP:                          -70
+RSRQ:                          -9
+SINR:                          14
+
+Neighbour list information:
+#     Neighbour Type       Mode       PhyCellID       RFCN       RSSI       RSRP       RSRQ
+1     Intra-Frequency      LTE        148             1600       -43        -76        -12
+2     Inter-Frequency      LTE        82              6200       -43        -70        -7
+3     Inter-Frequency      LTE        485             6200       -53        -80        -18
+4     Inter-Frequency      LTE        280             300        -44        -76        -11
+5     Inter-Frequency      LTE        383             300        -57        -86        -20
+6     Inter-Frequency      LTE        128             3350       -49        -84        -11
+7     Inter-Frequency      LTE        120             3350       -61        -90        -20
+
+Command Successful.

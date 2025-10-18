@@ -5,7 +5,6 @@ Collects cellular WAN status via SSH and exposes metrics for Prometheus
 """
 
 import argparse
-import hashlib
 import os
 import re
 import subprocess
@@ -131,50 +130,31 @@ def parse_cellwan_status(output):
     return data
 
 
-def safe_int(value, default=None):
-    """Safely convert value to int without emitting fake zeros"""
-    if value is None:
-        return None
-    value_str = str(value).strip()
-    if not value_str or value_str.upper() == 'N/A':
+def safe_int(value, default=0):
+    """Safely convert value to int"""
+    if value == 'N/A' or value == '':
         return None
     try:
-        return int(value_str)
+        return int(value)
     except (ValueError, TypeError):
         return default
 
 
-def safe_float(value, default=None):
-    """Safely convert value to float without emitting fake zeros"""
-    if value is None:
-        return None
-    value_str = str(value).strip()
-    if not value_str or value_str.upper() == 'N/A':
+def safe_float(value, default=0.0):
+    """Safely convert value to float"""
+    if value == 'N/A' or value == '':
         return None
     try:
-        return float(value_str)
+        return float(value)
     except (ValueError, TypeError):
         return default
-
-
-def masked_imei(imei_value):
-    """Hash IMEI so metrics stay uniquely identifiable without exposing raw data"""
-    if imei_value is None:
-        return 'unknown'
-    imei_str = imei_value.strip()
-    if not imei_str or imei_str.upper() == 'N/A':
-        return 'unknown'
-    digest = hashlib.sha256(imei_str.encode('utf-8')).hexdigest()[:12]
-    return f'sha256_{digest}'
 
 
 def update_metrics(data):
     """Update Prometheus metrics with parsed data"""
     with metrics_lock:
-        # Info metric
+        # Info metric (IMEI and Module removed for data protection)
         cellwan_info.info({
-            'imei': masked_imei(data.get('IMEI')),
-            'module_version': data.get('Module Software Version', 'N/A'),
             'network': data.get('Network In Use', 'N/A'),
             'access_technology': data.get('Current Access Technology', 'N/A'),
             'ca_combination': data.get('Current CA combination', 'N/A')
@@ -243,7 +223,7 @@ def update_metrics(data):
             nr5g = data['nr5g']
             nr5g_band = nr5g.get('Band', 'unknown')
             mcc = nr5g.get('MCC', 'unknown')
-            mnc = nr5g.get('MNC') or nr5g.get('NNC') or 'unknown'
+            mnc = nr5g.get('NNC', 'unknown')
             
             nr5g_rsrp = safe_float(nr5g.get('RSRP'))
             if nr5g_rsrp is not None:
@@ -271,12 +251,6 @@ def update_metrics(data):
         
         # SCC metrics
         if 'scc' in data:
-            cellwan_scc_rssi.clear()
-            cellwan_scc_rsrp.clear()
-            cellwan_scc_rsrq.clear()
-            cellwan_scc_sinr.clear()
-            cellwan_scc_bandwidth_dl.clear()
-            cellwan_scc_rfcn.clear()
             for scc_idx, scc_info in data['scc'].items():
                 if not scc_info:
                     continue
@@ -310,9 +284,6 @@ def update_metrics(data):
         
         # Neighbor metrics
         if 'neighbors' in data:
-            cellwan_neighbor_rssi.clear()
-            cellwan_neighbor_rsrp.clear()
-            cellwan_neighbor_rsrq.clear()
             for neighbor in data['neighbors']:
                 idx = neighbor.get('index', 'unknown')
                 ntype = neighbor.get('type', 'unknown')
