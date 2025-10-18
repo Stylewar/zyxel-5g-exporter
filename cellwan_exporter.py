@@ -17,6 +17,9 @@ from dotenv import load_dotenv
 # Load environment variables from .env file if present
 load_dotenv()
 
+# Debug mode configuration
+DEBUG = os.getenv('DEBUG', 'false').lower() in ('true', '1', 'yes')
+
 # Define Prometheus metrics
 cellwan_info = Info('cellwan', 'Cellular WAN information')
 cellwan_status_up = Gauge('cellwan_status_up', 'Cellular WAN connection status')
@@ -316,16 +319,19 @@ def fetch_cellwan_status(host, user, password):
 cfg cellwan_status get
 exit
 SSHEOF'''
-        print(f"DEBUG: Executing SSH command to {host}...", file=sys.stderr)
+        if DEBUG:
+            print(f"DEBUG: Executing SSH command to {host}...", file=sys.stderr)
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
-        
+
         if result.returncode == 0:
-            print(f"DEBUG: SSH command successful, received {len(result.stdout)} bytes", file=sys.stderr)
+            if DEBUG:
+                print(f"DEBUG: SSH command successful, received {len(result.stdout)} bytes", file=sys.stderr)
             return result.stdout
         else:
             print(f"ERROR: SSH command failed with return code {result.returncode}", file=sys.stderr)
-            print(f"STDERR: {result.stderr}", file=sys.stderr)
-            print(f"STDOUT: {result.stdout}", file=sys.stderr)
+            if DEBUG:
+                print(f"STDERR: {result.stderr}", file=sys.stderr)
+                print(f"STDOUT: {result.stdout}", file=sys.stderr)
             return None
     except subprocess.TimeoutExpired as e:
         print(f"ERROR: SSH command timed out after {e.timeout}s", file=sys.stderr)
@@ -380,6 +386,7 @@ Environment variables (can also be set in .env file):
   EXPORTER_PORT    - Prometheus exporter port (default: 9101)
   EXPORTER_IP      - IP to bind exporter (default: 0.0.0.0)
   SCRAPE_INTERVAL  - Seconds between scrapes (default: 30)
+  DEBUG            - Enable debug output (true/false, default: false)
         """
     )
     
@@ -407,7 +414,8 @@ Environment variables (can also be set in .env file):
     # Start Prometheus HTTP server
     print(f"Starting Prometheus exporter on {args.listen}:{args.port}")
     start_http_server(args.port, addr=args.listen)
-    
+    print(f"zyxel_cellwan_exporter listening on {args.listen}:{args.port}")
+
     # Start metric collection
     try:
         collect_metrics(host, user, password, args.interval)
