@@ -4,12 +4,10 @@ A complete monitoring solution for Zyxel 5G routers that collects cellular WAN s
 
 ## Recent Updates
 
-**v1.1.0 (2024-10-18)** - Privacy & Dashboard Improvements
 - 🔒 Removed IMEI and module version for privacy compliance (GDPR)
 - 📊 Added datasource selector to dashboard for multi-Prometheus support
 - 🎨 Reorganized dashboard with grouped Primary LTE and NR5G sections
 - 📈 Added color-coded stat panels with quality thresholds
-- See [PRIVACY_CHANGES.md](PRIVACY_CHANGES.md) for details
 
 ## Features
 
