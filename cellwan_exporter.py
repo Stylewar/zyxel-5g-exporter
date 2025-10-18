@@ -311,29 +311,35 @@ def fetch_cellwan_status(host, user, password):
     """Fetch cellwan_status via SSH"""
     try:
         # Use sshpass with proper SSH options to suppress warnings and handle authentication
+        # Some Zyxel routers require PTY allocation, using -tt forces it
         cmd = [
             'sshpass', '-p', password,
             'ssh',
+            '-tt',  # Force PTY allocation (required by some routers)
             '-o', 'StrictHostKeyChecking=no',
             '-o', 'UserKnownHostsFile=/dev/null',
-            '-o', 'LogLevel=ERROR',  # Suppress warnings
-            '-o', 'BatchMode=no',     # Allow password authentication
-            '-T',                     # Disable pseudo-terminal allocation
+            '-o', 'LogLevel=ERROR',
+            '-o', 'ConnectTimeout=10',
             f'{user}@{host}',
-            'cfg cellwan_status get'
+            'cfg cellwan_status get ; exit'  # Explicit exit to prevent hanging
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        print(f"DEBUG: Executing SSH command to {host}...", file=sys.stderr)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
         
         if result.returncode == 0:
+            print(f"DEBUG: SSH command successful, received {len(result.stdout)} bytes", file=sys.stderr)
             return result.stdout
         else:
-            print(f"Error fetching data: {result.stderr}", file=sys.stderr)
+            print(f"ERROR: SSH command failed with return code {result.returncode}", file=sys.stderr)
+            print(f"STDERR: {result.stderr}", file=sys.stderr)
+            print(f"STDOUT: {result.stdout}", file=sys.stderr)
             return None
-    except subprocess.TimeoutExpired:
-        print("SSH command timed out", file=sys.stderr)
+    except subprocess.TimeoutExpired as e:
+        print(f"ERROR: SSH command timed out after {e.timeout}s", file=sys.stderr)
+        print(f"Command: {' '.join(cmd[:2])} ssh ... {user}@{host} 'cfg cellwan_status get'", file=sys.stderr)
         return None
     except Exception as e:
-        print(f"Exception during SSH: {e}", file=sys.stderr)
+        print(f"EXCEPTION during SSH: {type(e).__name__}: {e}", file=sys.stderr)
         return None
 
 
