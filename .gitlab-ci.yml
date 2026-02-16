@@ -1,7 +1,7 @@
 stages: [mirror]
 
 include:
-  - project: "ci-templates"
+  - project: "stylewar/ci-templates"
     ref: main
     file: "/mirror-to-github.yml"
 
