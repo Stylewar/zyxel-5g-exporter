@@ -28,11 +28,9 @@ mirror_to_github:
     # Debug: welche URL nutzt origin wirklich?
     - git remote -v
 
-    # Hol dir alle Branches + Tags (wichtig fürs Spiegeln)
     - git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*" "+refs/tags/*:refs/tags/*"
-
-    # Push nach GitHub (ohne Backslash-Drama)
     - git remote add github "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${TARGET_REPO}.git"
-    - git push --force github --all
-    - git push --force github --tags
-
+    - >
+      git push --force github
+      "+refs/remotes/origin/*:refs/heads/*"
+      "+refs/tags/*:refs/tags/*"
