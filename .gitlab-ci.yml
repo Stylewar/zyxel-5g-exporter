@@ -9,34 +9,27 @@ mirror_to_github:
   variables:
     GIT_STRATEGY: fetch
     GIT_DEPTH: "0"
-    GITHUB_PRIVATE: "true"   # "false" wenn public Repo gewünscht
+    GITHUB_PRIVATE: "true"   # "false" für public
   script:
     - apk add --no-cache git ca-certificates curl
     - git config --global user.email "mirror@linuxguy.de"
     - git config --global user.name "GitLab Mirror"
-
     - export TARGET_REPO="${GITHUB_REPO:-$CI_PROJECT_NAME}"
 
-    # Repo auf GitHub anlegen, falls es noch nicht existiert
-    - |
-      if ! curl -fsS \
-        -H "Authorization: token ${GITHUB_TOKEN}" \
-        -H "Accept: application/vnd.github+json" \
-        "https://api.github.com/repos/${GITHUB_USER}/${TARGET_REPO}" >/dev/null; then
-        echo "GitHub Repo ${GITHUB_USER}/${TARGET_REPO} existiert nicht -> wird erstellt…"
-        curl -fsS -X POST \
-          -H "Authorization: token ${GITHUB_TOKEN}" \
-          -H "Accept: application/vnd.github+json" \
-          "https://api.github.com/user/repos" \
-          -d "{\"name\":\"${TARGET_REPO}\",\"private\":${GITHUB_PRIVATE}}"
-      else
-        echo "GitHub Repo existiert bereits."
-      fi
+    # GitHub Repo anlegen, falls nicht vorhanden (alles in EINER Zeile -> kein YAML/Shell Drama)
+    - >
+      curl -fsS -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json"
+      "https://api.github.com/repos/${GITHUB_USER}/${TARGET_REPO}" >/dev/null
+      || (echo "GitHub Repo ${GITHUB_USER}/${TARGET_REPO} existiert nicht -> wird erstellt…"
+      && curl -fsS -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json"
+      "https://api.github.com/user/repos"
+      -d "{\"name\":\"${TARGET_REPO}\",\"private\":${GITHUB_PRIVATE}}")
 
-    # Mirror push (Branches + Tags), ohne prune (damit GitHub nicht wegen Default-Branch rumzickt)
     - git clone --mirror . repo.git
     - cd repo.git
-    - |
-      git push --force "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${TARGET_REPO}.git" \
-        "+refs/heads/*:refs/heads/*" \
-        "+refs/tags/*:refs/tags/*"
+
+    # Wichtig: RefSpecs explizit und komplett in EINEM Befehl (ohne \)
+    - >
+      git push --force "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${TARGET_REPO}.git"
+      "+refs/heads/*:refs/heads/*"
+      "+refs/tags/*:refs/tags/*"
