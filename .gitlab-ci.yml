@@ -1,16 +1,18 @@
-stages:
-  - mirror
+stages: [mirror]
+
+variables:
+  GIT_DEPTH: "0"
 
 mirror_to_github:
   stage: mirror
   image: alpine:latest
-  rules:
-    - if: '$CI_COMMIT_BRANCH'
   before_script:
     - apk add --no-cache git
-  script:
     - git config --global user.email "mirror@linuxguy.de"
     - git config --global user.name "GitLab Mirror"
-    - git clone --mirror "$CI_REPOSITORY_URL" repo.git
+  script:
+    - git clone --mirror . repo.git
     - cd repo.git
-    - git push --mirror https://$GITHUB_USER:$GITHUB_TOKEN@github.com/Stylewar/bootstrap.git
+    - git push --mirror "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${CI_PROJECT_NAME}.git"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
