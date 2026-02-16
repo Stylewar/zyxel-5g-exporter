@@ -1,20 +1,21 @@
-stages: [mirror]
-
-variables:
-  GIT_DEPTH: "0"
-
 mirror_to_github:
   stage: mirror
-  image: alpine:latest
+  image: alpine:3.20
+  variables:
+    GIT_DEPTH: "0"
   before_script:
     - apk add --no-cache git
     - git config --global user.email "mirror@linuxguy.de"
     - git config --global user.name "GitLab Mirror"
   script:
-    - git clone --mirror . repo.git
+    - rm -rf repo.git
+    - git clone --bare . repo.git
     - cd repo.git
+    - git fetch --all --tags
+
+    # Backup push: nur aktualisieren, nichts löschen
     - >
-      git push --force --prune
+      git push
       "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${CI_PROJECT_NAME}.git"
       "+refs/heads/*:refs/heads/*"
       "+refs/tags/*:refs/tags/*"
