@@ -16,7 +16,7 @@ mirror_to_github:
     - git config --global user.name "GitLab Mirror"
     - export TARGET_REPO="${GITHUB_REPO:-$CI_PROJECT_NAME}"
 
-    # Repo auf GitHub anlegen, falls es nicht existiert
+    # GitHub Repo anlegen, falls nicht vorhanden
     - >
       curl -fsS -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json"
       "https://api.github.com/repos/${GITHUB_USER}/${TARGET_REPO}" >/dev/null
@@ -25,15 +25,14 @@ mirror_to_github:
       "https://api.github.com/user/repos"
       -d "{\"name\":\"${TARGET_REPO}\",\"private\":${GITHUB_PRIVATE}}")
 
-    # Sicherstellen, dass origin die Branch-Refs kennt (Runner kann "fresh repo" machen)
-    - git remote set-url origin "${CI_REPOSITORY_URL}"
+    # origin auf eine für den Runner erreichbare Clone-URL setzen
+    # -> Setz dafür in GitLab CI/CD Variables: GITLAB_CLONE_URL (z.B. https://<intern>/group/proj.git oder http://...)
+    - test -n "${GITLAB_CLONE_URL}" || (echo "ERROR: GITLAB_CLONE_URL ist leer" && exit 1)
+    - git remote set-url origin "${GITLAB_CLONE_URL}"
     - git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*" "+refs/tags/*:refs/tags/*"
 
-    # Push: explizit main aus dem aktuell gebauten Commit
-    - >
-      git push --force "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${TARGET_REPO}.git"
-      "HEAD:refs/heads/main"
-    - >
-      git push --force "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${TARGET_REPO}.git"
-      "refs/tags/*:refs/tags/*"
+    # Alles pushen (ohne Backslash-Multiline)
+    - git remote add github "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${TARGET_REPO}.git"
+    - git push --force github --all
+    - git push --force github --tags
 
