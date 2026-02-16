@@ -1,23 +1,28 @@
+stages:
+  - mirror
+
 mirror_to_github:
   stage: mirror
-  image: alpine:3.20
+  image: alpine:latest
+  rules:
+    # Spiegel nur main (oder ändere auf master)
+    - if: '$CI_COMMIT_BRANCH == "main"'
   variables:
-    GIT_DEPTH: "0"
-  before_script:
-    - apk add --no-cache git
+    GIT_STRATEGY: fetch
+    GIT_DEPTH: "0"          # wichtig: komplette Historie + Tags
+  script:
+    - apk add --no-cache git ca-certificates
     - git config --global user.email "mirror@linuxguy.de"
     - git config --global user.name "GitLab Mirror"
-  script:
-    - rm -rf repo.git
-    - git clone --bare . repo.git
-    - cd repo.git
-    - git fetch --all --tags
 
-    # Backup push: nur aktualisieren, nichts löschen
-    - >
-      git push
-      "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${CI_PROJECT_NAME}.git"
-      "+refs/heads/*:refs/heads/*"
-      "+refs/tags/*:refs/tags/*"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    # Ziel-Repo: entweder explizit per Variable oder Projektname
+    - export TARGET_REPO="${GITHUB_REPO:-$CI_PROJECT_NAME}"
+
+    # Mirror-Klon aus dem bereits vorhandenen Checkout
+    - git clone --mirror . repo.git
+    - cd repo.git
+
+    # Force-update Branches + Tags (ohne prune => GitHub versucht nicht main zu löschen)
+    - git push --force "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${TARGET_REPO}.git" \
+        "+refs/heads/*:refs/heads/*" \
+        "+refs/tags/*:refs/tags/*"
