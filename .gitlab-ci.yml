@@ -13,6 +13,10 @@ mirror_to_github:
   script:
     - git clone --mirror . repo.git
     - cd repo.git
-    - git push --mirror "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${CI_PROJECT_NAME}.git"
+    - >
+      git push --force --prune
+      "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${CI_PROJECT_NAME}.git"
+      "+refs/heads/*:refs/heads/*"
+      "+refs/tags/*:refs/tags/*"
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
