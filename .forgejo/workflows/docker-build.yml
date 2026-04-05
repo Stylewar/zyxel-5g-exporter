@@ -1,4 +1,4 @@
-name: test-runner
+name: docker-build
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  docker-build:
     runs-on: docker
     container:
       image: forgejo-ci:29
@@ -24,7 +24,17 @@ jobs:
           node --version
           git --version
 
-      - name: Show workspace
+      - name: Login to Forgejo container registry
+        env:
+          REGISTRY_USERNAME: ${{ secrets.FG_REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.FG_REGISTRY_PASSWORD }}
         run: |
-          pwd
-          ls -la
+          echo "$REGISTRY_PASSWORD" | docker login forgejo.lnxcloud.de -u "$REGISTRY_USERNAME" --password-stdin
+
+      - name: Build image
+        run: |
+          docker build -t forgejo.lnxcloud.de/stylewar/zyxel-5g-exporter:latest .
+
+      - name: Push image
+        run: |
+          docker push forgejo.lnxcloud.de/stylewar/zyxel-5g-exporter:latest
