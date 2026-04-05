@@ -29,6 +29,18 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.FG_REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.FG_REGISTRY_PASSWORD }}
         run: |
+          if [ -z "$REGISTRY_USERNAME" ]; then
+            echo "FG_REGISTRY_USERNAME is empty"
+            exit 1
+          fi
+
+          if [ -z "$REGISTRY_PASSWORD" ]; then
+            echo "FG_REGISTRY_PASSWORD is empty"
+            exit 1
+          fi
+
+          echo "Using registry host: forgejo.lnxcloud.de"
+          echo "Using registry username: $REGISTRY_USERNAME"
           echo "$REGISTRY_PASSWORD" | docker login forgejo.lnxcloud.de -u "$REGISTRY_USERNAME" --password-stdin
 
       - name: Build image
