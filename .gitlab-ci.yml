@@ -1,9 +1,0 @@
-stages: [mirror]
-
-include:
-  - project: "stylewar/ci-templates"
-    ref: main
-    file: "/mirror-to-github.yml"
-
-mirror_to_github:
-  extends: .mirror_to_github
