@@ -1,4 +1,4 @@
-name: Docker Build
+name: test-runner
 
 on:
   push:
@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  docker-build:
+  test:
     runs-on: docker
     container:
-      image: docker:cli
+      image: forgejo-ci:29
 
     steps:
       - name: Checkout repository
@@ -18,9 +18,13 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Show Docker version
-        run: docker version
-
-      - name: Build Docker image
+      - name: Show versions
         run: |
-          docker build -t zyxel-5g-exporter:test .
+          docker --version
+          node --version
+          git --version
+
+      - name: Show workspace
+        run: |
+          pwd
+          ls -la
