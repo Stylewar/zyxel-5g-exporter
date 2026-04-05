@@ -9,6 +9,8 @@ on:
 jobs:
   docker-build:
     runs-on: docker
+    container:
+      image: docker:cli
 
     steps:
       - name: Checkout repository
@@ -16,17 +18,9 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Build OCI image tarball with Kaniko
-        uses: docker://gcr.io/kaniko-project/executor:v1.23.2-debug
-        with:
-          args: >-
-            --context=dir:///github/workspace
-            --dockerfile=/github/workspace/Dockerfile
-            --destination=local/zyxel-5g-exporter:test
-            --no-push
-            --tar-path=/github/workspace/zyxel-5g-exporter-image.tar
+      - name: Show Docker version
+        run: docker version
 
-      - name: Verify image tarball exists
+      - name: Build Docker image
         run: |
-          test -f zyxel-5g-exporter-image.tar
-          ls -lh zyxel-5g-exporter-image.tar
+          docker build -t zyxel-5g-exporter:test .
