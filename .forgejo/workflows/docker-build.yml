@@ -16,16 +16,17 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Build Docker image
-        env:
-          IMAGE_NAME: zyxel-5g-exporter
-        run: |
-          docker build \
-            --tag "${IMAGE_NAME}:test" \
-            .
+      - name: Build OCI image tarball with Kaniko
+        uses: docker://gcr.io/kaniko-project/executor:v1.23.2-debug
+        with:
+          args: >-
+            --context=dir:///github/workspace
+            --dockerfile=/github/workspace/Dockerfile
+            --destination=local/zyxel-5g-exporter:test
+            --no-push
+            --tar-path=/github/workspace/zyxel-5g-exporter-image.tar
 
-      - name: Inspect built image
-        env:
-          IMAGE_NAME: zyxel-5g-exporter
+      - name: Verify image tarball exists
         run: |
-          docker image inspect "${IMAGE_NAME}:test"
+          test -f zyxel-5g-exporter-image.tar
+          ls -lh zyxel-5g-exporter-image.tar
