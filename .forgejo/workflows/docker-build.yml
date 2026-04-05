@@ -1,0 +1,31 @@
+name: Docker Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  docker-build:
+    runs-on: docker
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Build Docker image
+        env:
+          IMAGE_NAME: zyxel-5g-exporter
+        run: |
+          docker build \
+            --tag "${IMAGE_NAME}:test" \
+            .
+
+      - name: Inspect built image
+        env:
+          IMAGE_NAME: zyxel-5g-exporter
+        run: |
+          docker image inspect "${IMAGE_NAME}:test"
