@@ -1,6 +1,7 @@
+---
 name: docker-build
 
-on:
+'on':
   push:
     branches:
       - main
@@ -29,11 +30,16 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.FG_REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.FG_REGISTRY_PASSWORD }}
         run: |
-          echo "$REGISTRY_PASSWORD" | docker login forgejo.lnxcloud.de -u "$REGISTRY_USERNAME" --password-stdin
+          echo "$REGISTRY_PASSWORD" |
+            docker login forgejo.lnxcloud.de \
+              -u "$REGISTRY_USERNAME" \
+              --password-stdin
 
       - name: Build image
         run: |
-          docker build -t forgejo.lnxcloud.de/stylewar/zyxel-5g-exporter:latest .
+          docker build \
+            -t forgejo.lnxcloud.de/stylewar/zyxel-5g-exporter:latest \
+            .
 
       - name: Push image
         run: |
