@@ -14,7 +14,7 @@ jobs:
   mirror:
     runs-on: docker
     env:
-      GH_CREATE_REPO: "false"
+      GH_CREATE_REPO: "true"
       GH_CREATE_PRIVATE_REPO: "true"
 
     steps:
