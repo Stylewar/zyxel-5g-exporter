@@ -61,6 +61,22 @@ jobs:
                 "https://api.github.com/user/repos" \
                 -d "${payload}"
             fi
+
+            echo "Waiting for GitHub repository ${GH_USERNAME}/${REPO_NAME}" \
+              "to become ready for git push."
+            for attempt in $(seq 1 12); do
+              if git ls-remote "$GITHUB_REMOTE" >/dev/null 2>&1; then
+                echo "GitHub repository is ready."
+                break
+              fi
+
+              if [ "$attempt" -eq 12 ]; then
+                echo "GitHub repository did not become ready in time." >&2
+                exit 1
+              fi
+
+              sleep 5
+            done
           fi
 
           git remote remove github-mirror 2>/dev/null || true
