@@ -7,6 +7,10 @@ name: docker-build
       - main
   workflow_dispatch:
 
+env:
+  IMAGE_NAME: forgejo.lnxcloud.de/stylewar/zyxel-5g-exporter
+  IMAGE_MAJOR_VERSION: "1"
+
 jobs:
   docker-build:
     runs-on: docker
@@ -25,22 +29,57 @@ jobs:
           node --version
           git --version
 
+      - name: Check Docker daemon
+        run: |
+          docker version
+          docker info
+
       - name: Login to Forgejo container registry
         env:
           REGISTRY_USERNAME: ${{ secrets.FG_REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.FG_REGISTRY_PASSWORD }}
         run: |
+          if [ -z "$REGISTRY_USERNAME" ]; then
+            echo "FG_REGISTRY_USERNAME is empty"
+            exit 1
+          fi
+
+          if [ -z "$REGISTRY_PASSWORD" ]; then
+            echo "FG_REGISTRY_PASSWORD is empty"
+            exit 1
+          fi
+
           echo "$REGISTRY_PASSWORD" |
             docker login forgejo.lnxcloud.de \
               -u "$REGISTRY_USERNAME" \
               --password-stdin
 
-      - name: Build image
+      - name: Resolve version and build image
         run: |
-          docker build \
-            -t forgejo.lnxcloud.de/stylewar/zyxel-5g-exporter:latest \
-            .
+          next_minor=0
+          while docker manifest inspect \
+            "${IMAGE_NAME}:1.${next_minor}" >/dev/null 2>&1; do
+            next_minor=$((next_minor + 1))
+          done
 
-      - name: Push image
+          image_version="1.${next_minor}"
+          echo "Resolved image version: ${image_version}"
+
+          docker build \
+            -t "${IMAGE_NAME}:${image_version}" \
+            -t "${IMAGE_NAME}:${IMAGE_MAJOR_VERSION}" \
+            -t "${IMAGE_NAME}:latest" \
+            .
+          echo "IMAGE_VERSION=${image_version}" >> "$GITHUB_ENV"
+
+      - name: Push version tag
         run: |
-          docker push forgejo.lnxcloud.de/stylewar/zyxel-5g-exporter:latest
+          docker push "${IMAGE_NAME}:${IMAGE_VERSION}"
+
+      - name: Push major version tag
+        run: |
+          docker push "${IMAGE_NAME}:${IMAGE_MAJOR_VERSION}"
+
+      - name: Push latest tag
+        run: |
+          docker push "${IMAGE_NAME}:latest"
