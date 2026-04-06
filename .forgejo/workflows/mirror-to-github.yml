@@ -1,0 +1,72 @@
+---
+name: Mirror to GitHub
+
+'on':
+  push:
+    branches:
+      - main
+      - master
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: docker
+    env:
+      GH_CREATE_REPO: "false"
+      GH_CREATE_PRIVATE_REPO: "true"
+
+    steps:
+      - name: Checkout full repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all refs
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --all --tags --prune
+
+      - name: Push mirror to GitHub
+        env:
+          GH_USERNAME: ${{ secrets.GH_USERNAME }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          if [ -z "$GH_USERNAME" ] || [ -z "$GH_TOKEN" ]; then
+            echo "GH_USERNAME and GH_TOKEN must be set as" \
+              "Forgejo Actions secrets."
+            exit 1
+          fi
+
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          GITHUB_REMOTE="https://${GH_USERNAME}:${GH_TOKEN}@github.com/${GH_USERNAME}/${REPO_NAME}.git"
+          CREATE_REPO="$(printf '%s' "${GH_CREATE_REPO}" \
+            | tr '[:upper:]' '[:lower:]')"
+          CREATE_PRIVATE_REPO="$(printf '%s' "${GH_CREATE_PRIVATE_REPO}" \
+            | tr '[:upper:]' '[:lower:]')"
+
+          if [ "$CREATE_REPO" = "true" ]; then
+            if ! curl -fsS \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GH_USERNAME}/${REPO_NAME}" \
+              >/dev/null; then
+              echo "GitHub repository ${GH_USERNAME}/${REPO_NAME}" \
+                "does not exist. Creating it now."
+              payload="{\"name\":\"${REPO_NAME}\",\"private\":${CREATE_PRIVATE_REPO}}"
+              curl -fsS -X POST \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/user/repos" \
+                -d "${payload}"
+            fi
+          fi
+
+          git remote remove github-mirror 2>/dev/null || true
+          git remote add github-mirror "$GITHUB_REMOTE"
+
+          # Mirror all branches and tags. This intentionally avoids deleting
+          # unrelated refs outside normal heads/tags namespaces.
+          git push github-mirror --force --all
+          git push github-mirror --force --tags
