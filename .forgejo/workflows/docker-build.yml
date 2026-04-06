@@ -10,7 +10,7 @@ jobs:
   docker-build:
     runs-on: docker
     container:
-      image: forgejo-ci:29
+      image: forgejo.lnxcloud.de/stylewar/forgejo-ci:29
 
     steps:
       - name: Checkout repository
