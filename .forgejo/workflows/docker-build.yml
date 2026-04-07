@@ -7,6 +7,10 @@ name: docker-build
       - main
   workflow_dispatch:
 
+concurrency:
+  group: zyxel-5g-exporter-docker-build-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   IMAGE_NAME: forgejo.lnxcloud.de/stylewar/zyxel-5g-exporter
   IMAGE_MAJOR_VERSION: "1"
