@@ -25,7 +25,6 @@ jobs:
 
       - name: Fetch all refs
         run: |
-          git fetch --prune --unshallow || true
           git fetch --all --tags --prune
 
       - name: Push mirror to GitHub
