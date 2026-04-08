@@ -1,0 +1,49 @@
+---
+name: python-checks
+
+'on':
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: zyxel-5g-exporter-python-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-checks:
+    runs-on: docker
+    container:
+      image: forgejo.lnxcloud.de/stylewar/forgejo-ci:29
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install Python tooling
+        run: |
+          apk add --no-cache python3 py3-pip
+          python3 --version
+          pip3 --version
+
+      - name: Install dependencies and linter
+        run: |
+          python3 -m pip install --no-cache-dir \
+            -r requirements.txt \
+            ruff
+
+      - name: Check Python syntax
+        run: |
+          python3 -m py_compile cellwan_exporter.py
+
+      - name: Run parser regression tests
+        run: |
+          python3 -m unittest discover -s tests -v
+
+      - name: Lint Python code
+        run: |
+          python3 -m ruff check .
