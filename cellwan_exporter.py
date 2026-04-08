@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 # Define Prometheus metrics
 cellwan_info = Info('cellwan', 'Cellular WAN information')
 cellwan_status_up = Gauge('cellwan_status_up', 'Cellular WAN connection status')
+cellwan_scrape_success = Gauge('cellwan_scrape_success', 'Whether the latest router scrape succeeded')
 
 # Primary cell metrics
 cellwan_primary_rssi = Gauge('cellwan_primary_rssi_dbm', 'Primary cell RSSI in dBm', ['band', 'cell_id', 'enodeb_id'])
@@ -68,6 +69,42 @@ cellwan_neighbor_rsrq = Gauge('cellwan_neighbor_rsrq_db', 'Neighbor cell RSRQ in
 
 # Lock for thread safety
 metrics_lock = Lock()
+
+UNKNOWN_INFO = {
+    'network': 'N/A',
+    'access_technology': 'N/A',
+    'ca_combination': 'N/A'
+}
+
+LABELED_METRICS = (
+    cellwan_primary_rssi,
+    cellwan_primary_rsrp,
+    cellwan_primary_rsrq,
+    cellwan_primary_sinr,
+    cellwan_primary_cqi,
+    cellwan_primary_mcs,
+    cellwan_primary_ri,
+    cellwan_primary_pmi,
+    cellwan_primary_bandwidth_ul,
+    cellwan_primary_bandwidth_dl,
+    cellwan_primary_physical_cell_id,
+    cellwan_primary_rfcn,
+    cellwan_nr5g_rsrp,
+    cellwan_nr5g_rsrq,
+    cellwan_nr5g_sinr,
+    cellwan_nr5g_bandwidth_dl,
+    cellwan_nr5g_physical_cell_id,
+    cellwan_nr5g_rfcn,
+    cellwan_scc_rssi,
+    cellwan_scc_rsrp,
+    cellwan_scc_rsrq,
+    cellwan_scc_sinr,
+    cellwan_scc_bandwidth_dl,
+    cellwan_scc_rfcn,
+    cellwan_neighbor_rssi,
+    cellwan_neighbor_rsrp,
+    cellwan_neighbor_rsrq,
+)
 
 
 def parse_value(line, pattern, default='N/A'):
@@ -160,138 +197,153 @@ def safe_float(value, default=0.0):
         return default
 
 
+def clear_router_metrics():
+    """Remove all labeled series so stale cells do not linger across scrapes."""
+    for metric in LABELED_METRICS:
+        metric.clear()
+
+
+def mark_scrape_failed():
+    """Reset scrape-dependent metrics after an SSH or parsing failure."""
+    with metrics_lock:
+        clear_router_metrics()
+        cellwan_info.info(UNKNOWN_INFO)
+        cellwan_status_up.set(0)
+        cellwan_scrape_success.set(0)
+
+
 def update_metrics(data):
     """Update Prometheus metrics with parsed data"""
     with metrics_lock:
+        clear_router_metrics()
+
         # Info metric (IMEI and Module removed for data protection)
         cellwan_info.info({
             'network': data.get('Network In Use', 'N/A'),
             'access_technology': data.get('Current Access Technology', 'N/A'),
             'ca_combination': data.get('Current CA combination', 'N/A')
         })
-        
-        # Status
+
+        cellwan_scrape_success.set(1)
         status = data.get('Status', 'Down')
         cellwan_status_up.set(1 if status == 'Up' else 0)
-        
-        # Primary cell labels
+
         band = data.get('Current Band', 'unknown')
         cell_id = data.get('Cell ID', 'unknown')
         enodeb_id = data.get('eNodeB ID', 'unknown')
-        
-        # Primary cell metrics
+
         rssi = safe_float(data.get('RSSI'))
         if rssi is not None:
             cellwan_primary_rssi.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(rssi)
-        
+
         rsrp = safe_float(data.get('RSRP'))
         if rsrp is not None:
             cellwan_primary_rsrp.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(rsrp)
-        
+
         rsrq = safe_float(data.get('RSRQ'))
         if rsrq is not None:
             cellwan_primary_rsrq.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(rsrq)
-        
+
         sinr = safe_float(data.get('SINR'))
         if sinr is not None:
             cellwan_primary_sinr.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(sinr)
-        
+
         cqi = safe_int(data.get('CQI'))
         if cqi is not None:
             cellwan_primary_cqi.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(cqi)
-        
+
         mcs = safe_int(data.get('MCS'))
         if mcs is not None:
             cellwan_primary_mcs.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(mcs)
-        
+
         ri = safe_int(data.get('RI'))
         if ri is not None:
             cellwan_primary_ri.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(ri)
-        
+
         pmi = safe_int(data.get('PMI'))
         if pmi is not None:
             cellwan_primary_pmi.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(pmi)
-        
+
         ul_bw = safe_float(data.get('UL Bandwidth (MHz)'))
         if ul_bw is not None:
             cellwan_primary_bandwidth_ul.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(ul_bw)
-        
+
         dl_bw = safe_float(data.get('DL Bandwidth (MHz)'))
         if dl_bw is not None:
             cellwan_primary_bandwidth_dl.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(dl_bw)
-        
+
         phy_cell_id = safe_int(data.get('Physical Cell ID'))
         if phy_cell_id is not None:
             cellwan_primary_physical_cell_id.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(phy_cell_id)
-        
+
         rfcn = safe_int(data.get('RFCN'))
         if rfcn is not None:
             cellwan_primary_rfcn.labels(band=band, cell_id=cell_id, enodeb_id=enodeb_id).set(rfcn)
-        
+
         # NR5G metrics
         if 'nr5g' in data and data['nr5g']:
             nr5g = data['nr5g']
             nr5g_band = nr5g.get('Band', 'unknown')
             mcc = nr5g.get('MCC', 'unknown')
             mnc = nr5g.get('NNC', 'unknown')
-            
+
             nr5g_rsrp = safe_float(nr5g.get('RSRP'))
             if nr5g_rsrp is not None:
                 cellwan_nr5g_rsrp.labels(band=nr5g_band, mcc=mcc, mnc=mnc).set(nr5g_rsrp)
-            
+
             nr5g_rsrq = safe_float(nr5g.get('RSRQ'))
             if nr5g_rsrq is not None:
                 cellwan_nr5g_rsrq.labels(band=nr5g_band, mcc=mcc, mnc=mnc).set(nr5g_rsrq)
-            
+
             nr5g_sinr = safe_float(nr5g.get('SINR'))
             if nr5g_sinr is not None:
                 cellwan_nr5g_sinr.labels(band=nr5g_band, mcc=mcc, mnc=mnc).set(nr5g_sinr)
-            
+
             nr5g_dl_bw = safe_float(nr5g.get('DL Bandwidth (MHz)'))
             if nr5g_dl_bw is not None:
                 cellwan_nr5g_bandwidth_dl.labels(band=nr5g_band, mcc=mcc, mnc=mnc).set(nr5g_dl_bw)
-            
+
             nr5g_phy_cell = safe_int(nr5g.get('Physical Cell ID'))
             if nr5g_phy_cell is not None:
                 cellwan_nr5g_physical_cell_id.labels(band=nr5g_band, mcc=mcc, mnc=mnc).set(nr5g_phy_cell)
-            
+
             nr5g_rfcn = safe_int(nr5g.get('RFCN'))
             if nr5g_rfcn is not None:
                 cellwan_nr5g_rfcn.labels(band=nr5g_band, mcc=mcc, mnc=mnc).set(nr5g_rfcn)
-        
+
         # SCC metrics
         if 'scc' in data:
             for scc_idx, scc_info in data['scc'].items():
                 if not scc_info:
                     continue
-                
+
                 scc_band = scc_info.get('Band', 'unknown')
                 scc_phy_cell = scc_info.get('Physical Cell ID', 'unknown')
-                
+
                 scc_rssi = safe_float(scc_info.get('RSSI'))
                 if scc_rssi is not None:
                     cellwan_scc_rssi.labels(scc_index=scc_idx, band=scc_band, physical_cell_id=scc_phy_cell).set(scc_rssi)
-                
+
                 scc_rsrp = safe_float(scc_info.get('RSRP'))
                 if scc_rsrp is not None:
                     cellwan_scc_rsrp.labels(scc_index=scc_idx, band=scc_band, physical_cell_id=scc_phy_cell).set(scc_rsrp)
-                
+
                 scc_rsrq = safe_float(scc_info.get('RSRQ'))
                 if scc_rsrq is not None:
                     cellwan_scc_rsrq.labels(scc_index=scc_idx, band=scc_band, physical_cell_id=scc_phy_cell).set(scc_rsrq)
-                
+
                 scc_sinr = safe_float(scc_info.get('SINR'))
                 if scc_sinr is not None:
                     cellwan_scc_sinr.labels(scc_index=scc_idx, band=scc_band, physical_cell_id=scc_phy_cell).set(scc_sinr)
-                
+
                 scc_dl_bw = safe_float(scc_info.get('DownlinkBandwidth (MHZ)'))
                 if scc_dl_bw is not None:
                     cellwan_scc_bandwidth_dl.labels(scc_index=scc_idx, band=scc_band, physical_cell_id=scc_phy_cell).set(scc_dl_bw)
-                
+
                 scc_rfcn = safe_int(scc_info.get('RFCN'))
                 if scc_rfcn is not None:
                     cellwan_scc_rfcn.labels(scc_index=scc_idx, band=scc_band, physical_cell_id=scc_phy_cell).set(scc_rfcn)
-        
+
         # Neighbor metrics
         if 'neighbors' in data:
             for neighbor in data['neighbors']:
@@ -300,38 +352,55 @@ def update_metrics(data):
                 mode = neighbor.get('mode', 'unknown')
                 phy_cell = neighbor.get('physical_cell_id', 'unknown')
                 rfcn = neighbor.get('rfcn', 'unknown')
-                
+
                 n_rssi = safe_float(neighbor.get('rssi'))
                 if n_rssi is not None:
-                    cellwan_neighbor_rssi.labels(neighbor_index=idx, neighbor_type=ntype, mode=mode, 
+                    cellwan_neighbor_rssi.labels(neighbor_index=idx, neighbor_type=ntype, mode=mode,
                                                 physical_cell_id=phy_cell, rfcn=rfcn).set(n_rssi)
-                
+
                 n_rsrp = safe_float(neighbor.get('rsrp'))
                 if n_rsrp is not None:
-                    cellwan_neighbor_rsrp.labels(neighbor_index=idx, neighbor_type=ntype, mode=mode, 
+                    cellwan_neighbor_rsrp.labels(neighbor_index=idx, neighbor_type=ntype, mode=mode,
                                                 physical_cell_id=phy_cell, rfcn=rfcn).set(n_rsrp)
-                
+
                 n_rsrq = safe_float(neighbor.get('rsrq'))
                 if n_rsrq is not None:
-                    cellwan_neighbor_rsrq.labels(neighbor_index=idx, neighbor_type=ntype, mode=mode, 
+                    cellwan_neighbor_rsrq.labels(neighbor_index=idx, neighbor_type=ntype, mode=mode,
                                                 physical_cell_id=phy_cell, rfcn=rfcn).set(n_rsrq)
 
 
 def fetch_cellwan_status(host, user, password):
     """Fetch cellwan_status via SSH"""
     try:
-        # Zyxel routers require PTY allocation but we can't use -tt with capture_output
-        # Solution: Use shell with heredoc to send command via stdin
-        cmd = f'''sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=10 {user}@{host} << 'SSHEOF'
-cfg cellwan_status get
-exit
-SSHEOF'''
+        cmd = [
+            'sshpass',
+            '-p',
+            password,
+            'ssh',
+            '-tt',
+            '-o',
+            'StrictHostKeyChecking=no',
+            '-o',
+            'UserKnownHostsFile=/dev/null',
+            '-o',
+            'LogLevel=ERROR',
+            '-o',
+            'ConnectTimeout=10',
+            f'{user}@{host}',
+        ]
         logger.debug(f"Executing SSH command to {host}...")
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            input='cfg cellwan_status get\nexit\n',
+            text=True,
+            timeout=15,
+            check=False,
+        )
 
         if result.returncode == 0:
             logger.debug(f"SSH command successful, received {len(result.stdout)} bytes")
-            return result.stdout
+            return result.stdout.replace('\r', '')
         else:
             logger.error(f"SSH command failed with return code {result.returncode}")
             logger.debug(f"STDERR: {result.stderr}")
@@ -359,8 +428,10 @@ def collect_metrics(host, user, password, interval):
                 logger.info("Metrics updated successfully")
             else:
                 logger.warning("Failed to fetch data")
+                mark_scrape_failed()
         except Exception as e:
             logger.error(f"Error updating metrics: {e}")
+            mark_scrape_failed()
 
         time.sleep(interval)
 
