@@ -53,7 +53,7 @@
       "gridPos": {"h": 5, "w": 20, "x": 4, "y": 0},
       "id": 2,
       "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "name"},
-      "targets": [{"expr": "cellwan_info", "refId": "A", "legendFormat": "{{network}} | {{access_technology}} | CA: {{ca_combination}}"}],
+      "targets": [{"expr": "cellwan_info", "instant": true, "refId": "A", "legendFormat": "{{network}} | {{access_technology}} | CA: {{ca_combination}}"}],
       "title": "Network Information",
       "type": "stat"
     },
