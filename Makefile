@@ -2,7 +2,7 @@ COMPOSE ?= docker compose
 PYTHON ?= python3
 PIP ?= pip3
 
-.PHONY: help build run stop restart logs clean test install lint dev-run dev-test status ps
+.PHONY: help build run stop restart logs clean test install lint check dev-run dev-test status ps
 
 help:
 	@echo "Zyxel 5G Router Prometheus Exporter"
@@ -17,6 +17,7 @@ help:
 	@echo "  test          - Test the exporter endpoint"
 	@echo "  install       - Install Python dependencies"
 	@echo "  lint          - Run ruff"
+	@echo "  check         - Run syntax, tests, and lint"
 	@echo "  dev-run       - Run exporter with local Python"
 	@echo "  dev-test      - Run unit tests"
 	@echo "  status        - Show compose status"
@@ -48,6 +49,11 @@ install:
 	$(PIP) install -r requirements.txt
 
 lint:
+	$(PYTHON) -m ruff check .
+
+check:
+	$(PYTHON) -m py_compile cellwan_exporter.py
+	$(PYTHON) -m unittest discover -s tests -v
 	$(PYTHON) -m ruff check .
 
 # Development targets
