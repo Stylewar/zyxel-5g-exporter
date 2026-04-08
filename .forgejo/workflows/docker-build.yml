@@ -115,9 +115,7 @@ jobs:
                     break
                     ;;
                 esac
-              done <<EOF
-              $changed_files
-              EOF
+              done < <(printf '%s\n' "$changed_files")
             fi
           fi
 

@@ -32,7 +32,7 @@ jobs:
 
       - name: Install dependencies and linter
         run: |
-          python3 -m pip install --no-cache-dir \
+          python3 -m pip install --break-system-packages --no-cache-dir \
             -r requirements.txt \
             ruff
 
