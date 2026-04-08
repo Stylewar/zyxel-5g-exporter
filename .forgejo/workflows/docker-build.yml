@@ -5,7 +5,20 @@ name: docker-build
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: >-
+          Optional semantic version to release, for example 1.2.0.
+        required: false
+        type: string
+      skip_push:
+        description: "Build only without pushing image tags"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: zyxel-5g-exporter-docker-build-${{ github.ref }}
@@ -13,7 +26,6 @@ concurrency:
 
 env:
   IMAGE_NAME: forgejo.lnxcloud.de/stylewar/zyxel-5g-exporter
-  IMAGE_MAJOR_VERSION: "1"
 
 jobs:
   docker-build:
@@ -33,32 +45,100 @@ jobs:
           node --version
           git --version
 
-      - name: Detect image-relevant changes
+      - name: Resolve build mode
         run: |
-          if ! git rev-parse --verify HEAD^ >/dev/null 2>&1; then
-            echo "No parent commit available. Building image."
-            echo "SHOULD_BUILD=true" >> "$GITHUB_ENV"
-            exit 0
-          fi
-
-          changed_files="$(git diff --name-only HEAD^ HEAD)"
-          printf 'Changed files:\n%s\n' "$changed_files"
-
           should_build=false
-          while IFS= read -r path; do
-            case "$path" in
-              Dockerfile|requirements.txt|.dockerignore|*.py)
+          should_push=false
+          push_latest=false
+          image_version=""
+          image_minor_version=""
+          image_major_version=""
+          ref_kind=""
+          ref_name="${GITHUB_REF}"
+
+          case "${GITHUB_REF}" in
+            refs/tags/*)
+              ref_kind="tag"
+              ref_name="${GITHUB_REF#refs/tags/}"
+              ;;
+            refs/heads/*)
+              ref_kind="branch"
+              ref_name="${GITHUB_REF#refs/heads/}"
+              ;;
+          esac
+
+          if [ "${ref_kind}" = "tag" ]; then
+            tag_name="${ref_name}"
+            case "$tag_name" in
+              v[0-9]*.[0-9]*.[0-9]*)
+                image_version="${tag_name#v}"
+                image_minor_version="$(
+                  printf '%s' "$image_version" |
+                    sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+$/\1/'
+                )"
+                image_major_version="$(
+                  printf '%s' "$image_version" |
+                    sed -E 's/^([0-9]+)\..*$/\1/'
+                )"
                 should_build=true
-                break
+                push_latest=true
+                ;;
+              *)
+                echo "Unsupported release tag: ${tag_name}" >&2
+                exit 1
                 ;;
             esac
-          done <<EOF
-          $changed_files
-          EOF
+          elif [ -n "${{ inputs.release_version }}" ]; then
+            image_version="${{ inputs.release_version }}"
+            image_minor_version="$(
+              printf '%s' "$image_version" |
+                sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+$/\1/'
+            )"
+            image_major_version="$(
+              printf '%s' "$image_version" |
+                sed -E 's/^([0-9]+)\..*$/\1/'
+            )"
+            should_build=true
+            push_latest=true
+          else
+            if ! git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+              echo "No parent commit available. Building latest image."
+              should_build=true
+            else
+              changed_files="$(git diff --name-only HEAD^ HEAD)"
+              printf 'Changed files:\n%s\n' "$changed_files"
+
+              while IFS= read -r path; do
+                case "$path" in
+                  Dockerfile|requirements.txt|.dockerignore|*.py)
+                    should_build=true
+                    break
+                    ;;
+                esac
+              done <<EOF
+              $changed_files
+              EOF
+            fi
+          fi
+
+          if [ "${{ inputs.skip_push }}" != 'true' ] && [ "$should_build" = true ]; then
+            should_push=true
+          fi
 
           echo "SHOULD_BUILD=${should_build}" >> "$GITHUB_ENV"
+          echo "SHOULD_PUSH=${should_push}" >> "$GITHUB_ENV"
+          echo "PUSH_LATEST=${push_latest}" >> "$GITHUB_ENV"
+          echo "IMAGE_VERSION=${image_version}" >> "$GITHUB_ENV"
+          echo "IMAGE_MINOR_VERSION=${image_minor_version}" >> "$GITHUB_ENV"
+          echo "IMAGE_MAJOR_VERSION=${image_major_version}" >> "$GITHUB_ENV"
+          echo "REF_NAME=${ref_name}" >> "$GITHUB_ENV"
+
           if [ "$should_build" = true ]; then
-            echo "Image-relevant changes detected."
+            if [ -n "$image_version" ]; then
+              echo "Release build for ${image_version}"
+            else
+              echo "Branch build for latest image validation"
+            fi
           else
             echo "No image-relevant changes detected. Skipping build."
           fi
@@ -90,24 +170,33 @@ jobs:
               -u "$REGISTRY_USERNAME" \
               --password-stdin
 
-      - name: Resolve version and build image
+      - name: Build image
         if: ${{ env.SHOULD_BUILD == 'true' }}
         run: |
-          next_minor=0
-          while docker manifest inspect \
-            "${IMAGE_NAME}:1.${next_minor}" >/dev/null 2>&1; do
-            next_minor=$((next_minor + 1))
-          done
+          build_tags="-t ${IMAGE_NAME}:ci-build"
+          if [ -n "${IMAGE_VERSION}" ]; then
+            build_tags="${build_tags} -t ${IMAGE_NAME}:${IMAGE_VERSION}"
+            build_tags="${build_tags} -t ${IMAGE_NAME}:${IMAGE_MINOR_VERSION}"
+            build_tags="${build_tags} -t ${IMAGE_NAME}:${IMAGE_MAJOR_VERSION}"
+          fi
 
-          image_version="1.${next_minor}"
-          echo "Resolved image version: ${image_version}"
+          if [ "${REF_NAME}" = "main" ] || [ "${PUSH_LATEST}" = "true" ]; then
+            build_tags="${build_tags} -t ${IMAGE_NAME}:latest"
+          fi
 
-          docker build \
-            -t "${IMAGE_NAME}:${image_version}" \
-            -t "${IMAGE_NAME}:${IMAGE_MAJOR_VERSION}" \
-            -t "${IMAGE_NAME}:latest" \
-            .
-          echo "IMAGE_VERSION=${image_version}" >> "$GITHUB_ENV"
+          echo "docker build ${build_tags} ."
+          # shellcheck disable=SC2086
+          docker build ${build_tags} .
+
+      - name: Smoke test image
+        if: ${{ env.SHOULD_BUILD == 'true' }}
+        run: |
+          docker run --rm --entrypoint python \
+            "${IMAGE_NAME}:ci-build" \
+            -m py_compile cellwan_exporter.py
+          docker run --rm --entrypoint python \
+            "${IMAGE_NAME}:ci-build" \
+            cellwan_exporter.py --help >/dev/null
 
       - name: Skip build summary
         if: ${{ env.SHOULD_BUILD != 'true' }}
@@ -117,16 +206,21 @@ jobs:
             files changed."
 
       - name: Push version tag
-        if: ${{ env.SHOULD_BUILD == 'true' }}
+        if: ${{ env.SHOULD_PUSH == 'true' && env.IMAGE_VERSION != '' }}
         run: |
           docker push "${IMAGE_NAME}:${IMAGE_VERSION}"
 
+      - name: Push minor version tag
+        if: ${{ env.SHOULD_PUSH == 'true' && env.IMAGE_MINOR_VERSION != '' }}
+        run: |
+          docker push "${IMAGE_NAME}:${IMAGE_MINOR_VERSION}"
+
       - name: Push major version tag
-        if: ${{ env.SHOULD_BUILD == 'true' }}
+        if: ${{ env.SHOULD_PUSH == 'true' && env.IMAGE_MAJOR_VERSION != '' }}
         run: |
           docker push "${IMAGE_NAME}:${IMAGE_MAJOR_VERSION}"
 
       - name: Push latest tag
-        if: ${{ env.SHOULD_BUILD == 'true' }}
+        if: ${{ env.SHOULD_PUSH == 'true' && (github.ref_name == 'main' || env.PUSH_LATEST == 'true') }}
         run: |
           docker push "${IMAGE_NAME}:latest"
