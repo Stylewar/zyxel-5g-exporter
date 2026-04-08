@@ -1,83 +1,65 @@
-.PHONY: help build run stop logs clean test install
+COMPOSE ?= docker compose
+PYTHON ?= python3
+PIP ?= pip3
+
+.PHONY: help build run stop restart logs clean test install lint dev-run dev-test status ps
 
 help:
 	@echo "Zyxel 5G Router Prometheus Exporter"
 	@echo ""
 	@echo "Available targets:"
 	@echo "  build         - Build Docker image"
-	@echo "  run           - Start full stack (exporter + prometheus + grafana)"
-	@echo "  run-exporter  - Start exporter only"
-	@echo "  stop          - Stop all services"
-	@echo "  stop-exporter - Stop exporter only"
-	@echo "  restart       - Restart all services"
-	@echo "  logs          - Show container logs (full stack)"
-	@echo "  logs-exporter - Show exporter logs only"
+	@echo "  run           - Start exporter container"
+	@echo "  stop          - Stop exporter container"
+	@echo "  restart       - Restart exporter container"
+	@echo "  logs          - Show exporter logs"
 	@echo "  clean         - Remove containers and images"
 	@echo "  test          - Test the exporter endpoint"
 	@echo "  install       - Install Python dependencies"
-	@echo ""
-	@echo "Docker Compose Files:"
-	@echo "  docker-compose.yml          - Full stack (exporter + prometheus + grafana)"
-	@echo "  docker-compose.exporter.yml - Exporter only"
+	@echo "  lint          - Run ruff"
+	@echo "  dev-run       - Run exporter with local Python"
+	@echo "  dev-test      - Run unit tests"
+	@echo "  status        - Show compose status"
 
 build:
-	docker-compose build
+	$(COMPOSE) build
 
 run:
-	@echo "Starting full stack (exporter + prometheus + grafana)..."
-	docker-compose up -d
-
-run-exporter:
-	@echo "Starting exporter only..."
-	docker-compose -f docker-compose.exporter.yml up -d
+	$(COMPOSE) up -d
 
 stop:
-	docker-compose down
-
-stop-exporter:
-	docker-compose -f docker-compose.exporter.yml down
+	$(COMPOSE) down
 
 restart:
-	docker-compose restart
-
-restart-exporter:
-	docker-compose -f docker-compose.exporter.yml restart
+	$(COMPOSE) restart
 
 logs:
-	docker-compose logs -f
-
-logs-exporter:
-	docker-compose -f docker-compose.exporter.yml logs -f
+	$(COMPOSE) logs -f
 
 clean:
-	docker-compose down -v
-	docker-compose -f docker-compose.exporter.yml down -v
-	docker rmi cellwan-exporter 2>/dev/null || true
+	$(COMPOSE) down -v
+	docker image rm zyxel-cellwan-exporter:latest 2>/dev/null || true
 
 test:
 	@echo "Testing exporter endpoint..."
 	@curl -s http://localhost:9101/metrics | head -20
 
 install:
-	pip install -r requirements.txt
+	$(PIP) install -r requirements.txt
+
+lint:
+	$(PYTHON) -m ruff check .
 
 # Development targets
 dev-run:
-	python cellwan_exporter.py
+	$(PYTHON) cellwan_exporter.py
 
 dev-test:
-	python -m pytest tests/ -v 2>/dev/null || echo "No tests found"
+	$(PYTHON) -m unittest discover -s tests -v
 
 # Status checks
 status:
-	@echo "=== Full Stack Status ==="
-	@docker-compose ps
-	@echo ""
-	@echo "=== Exporter Only Status ==="
-	@docker-compose -f docker-compose.exporter.yml ps
+	$(COMPOSE) ps
 
 ps:
-	docker-compose ps
-
-ps-exporter:
-	docker-compose -f docker-compose.exporter.yml ps
+	$(COMPOSE) ps
