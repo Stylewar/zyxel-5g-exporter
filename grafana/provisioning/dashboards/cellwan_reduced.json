@@ -81,7 +81,17 @@
       "type": "table"
     },
     {
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "Active", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 20, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 4, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true}, "mappings": [{"options": {"0": {"color": "red", "index": 0, "text": "Inactive"}, "1": {"color": "green", "index": 1, "text": "Active"}}, "type": "value"}], "max": 1, "min": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 5},
+      "id": 5,
+      "options": {"legend": {"calcs": ["last"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
+      "targets": [{"expr": "cellwan_ca_band_active", "legendFormat": "{{band}}", "refId": "A"}],
+      "title": "CA Band Activity History",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 11},
       "id": 100,
       "title": "Primary LTE Cell",
       "type": "row"
@@ -89,7 +99,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": -100}, {"color": "yellow", "value": -90}, {"color": "green", "value": -80}]}, "unit": "dBm"}},
-      "gridPos": {"h": 4, "w": 3, "x": 0, "y": 6},
+      "gridPos": {"h": 4, "w": 3, "x": 0, "y": 12},
       "id": 10,
       "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
       "targets": [{"expr": "cellwan_primary_rsrp_dbm", "refId": "A"}],
@@ -99,7 +109,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": -85}, {"color": "yellow", "value": -75}, {"color": "green", "value": -65}]}, "unit": "dBm"}},
-      "gridPos": {"h": 4, "w": 3, "x": 3, "y": 6},
+      "gridPos": {"h": 4, "w": 3, "x": 3, "y": 12},
       "id": 11,
       "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
       "targets": [{"expr": "cellwan_primary_rssi_dbm", "refId": "A"}],
@@ -109,7 +119,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0}, {"color": "yellow", "value": 10}, {"color": "green", "value": 15}]}, "unit": "dB"}},
-      "gridPos": {"h": 4, "w": 3, "x": 6, "y": 6},
+      "gridPos": {"h": 4, "w": 3, "x": 6, "y": 12},
       "id": 12,
       "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
       "targets": [{"expr": "cellwan_primary_sinr_db", "refId": "A"}],
@@ -119,7 +129,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": -15}, {"color": "yellow", "value": -10}, {"color": "green", "value": -5}]}, "unit": "dB"}},
-      "gridPos": {"h": 4, "w": 3, "x": 9, "y": 6},
+      "gridPos": {"h": 4, "w": 3, "x": 9, "y": 12},
       "id": 13,
       "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
       "targets": [{"expr": "cellwan_primary_rsrq_db", "refId": "A"}],
@@ -129,7 +139,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "dBm"}},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
       "id": 14,
       "options": {"legend": {"calcs": ["last", "mean", "min", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
       "targets": [{"expr": "cellwan_primary_rsrp_dbm", "legendFormat": "RSRP ({{band}})", "refId": "A"}, {"expr": "cellwan_primary_rssi_dbm", "legendFormat": "RSSI ({{band}})", "refId": "B"}],
@@ -137,7 +147,7 @@
       "type": "timeseries"
     },
     {
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 20},
       "id": 200,
       "title": "NR5G Cell",
       "type": "row"
@@ -145,7 +155,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": -100}, {"color": "yellow", "value": -90}, {"color": "green", "value": -80}]}, "unit": "dBm"}},
-      "gridPos": {"h": 4, "w": 3, "x": 0, "y": 15},
+      "gridPos": {"h": 4, "w": 3, "x": 0, "y": 21},
       "id": 20,
       "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
       "targets": [{"expr": "cellwan_nr5g_rsrp_dbm", "refId": "A"}],
@@ -155,7 +165,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0}, {"color": "yellow", "value": 15}, {"color": "green", "value": 20}]}, "unit": "dB"}},
-      "gridPos": {"h": 4, "w": 3, "x": 3, "y": 15},
+      "gridPos": {"h": 4, "w": 3, "x": 3, "y": 21},
       "id": 21,
       "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
       "targets": [{"expr": "cellwan_nr5g_sinr_db", "refId": "A"}],
@@ -165,7 +175,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": -15}, {"color": "yellow", "value": -10}, {"color": "green", "value": -5}]}, "unit": "dB"}},
-      "gridPos": {"h": 4, "w": 3, "x": 6, "y": 15},
+      "gridPos": {"h": 4, "w": 3, "x": 6, "y": 21},
       "id": 22,
       "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
       "targets": [{"expr": "cellwan_nr5g_rsrq_db", "refId": "A"}],
@@ -175,7 +185,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}, "unit": "MHz"}},
-      "gridPos": {"h": 4, "w": 3, "x": 9, "y": 15},
+      "gridPos": {"h": 4, "w": 3, "x": 9, "y": 21},
       "id": 23,
       "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
       "targets": [{"expr": "cellwan_nr5g_bandwidth_dl_mhz", "refId": "A"}],
@@ -185,7 +195,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "dBm"}},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 15},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 21},
       "id": 24,
       "options": {"legend": {"calcs": ["last", "mean", "min", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
       "targets": [{"expr": "cellwan_nr5g_rsrp_dbm", "legendFormat": "RSRP ({{band}})", "refId": "A"}],
@@ -193,7 +203,7 @@
       "type": "timeseries"
     },
     {
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 29},
       "id": 300,
       "title": "Signal Quality Comparison",
       "type": "row"
@@ -201,7 +211,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "dB", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "dB"}},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30},
       "id": 30,
       "options": {"legend": {"calcs": ["last", "mean", "min", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
       "targets": [{"expr": "cellwan_primary_sinr_db", "legendFormat": "Primary SINR", "refId": "A"}, {"expr": "cellwan_nr5g_sinr_db", "legendFormat": "NR5G SINR", "refId": "B"}, {"expr": "cellwan_primary_rsrq_db", "legendFormat": "Primary RSRQ", "refId": "C"}, {"expr": "cellwan_nr5g_rsrq_db", "legendFormat": "NR5G RSRQ", "refId": "D"}],
@@ -211,7 +221,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "MHz", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "MHz"}},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30},
       "id": 31,
       "options": {"legend": {"calcs": ["last"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
       "targets": [{"expr": "cellwan_primary_bandwidth_dl_mhz", "legendFormat": "Primary DL", "refId": "A"}, {"expr": "cellwan_primary_bandwidth_ul_mhz", "legendFormat": "Primary UL", "refId": "B"}, {"expr": "cellwan_nr5g_bandwidth_dl_mhz", "legendFormat": "NR5G DL", "refId": "C"}, {"expr": "sum(cellwan_scc_bandwidth_dl_mhz)", "legendFormat": "SCC Total DL", "refId": "D"}],
@@ -219,7 +229,7 @@
       "type": "timeseries"
     },
     {
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 32},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 38},
       "id": 400,
       "title": "Secondary Carriers (SCC)",
       "type": "row"
@@ -227,7 +237,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "dBm", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "dBm"}},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 33},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 39},
       "id": 40,
       "options": {"legend": {"calcs": ["last", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
       "targets": [{"expr": "cellwan_scc_rsrp_dbm", "legendFormat": "SCC {{scc_index}} - {{band}}", "refId": "A"}],
@@ -237,7 +247,7 @@
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "dB", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "dB"}},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 33},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 39},
       "id": 41,
       "options": {"legend": {"calcs": ["last", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
       "targets": [{"expr": "cellwan_scc_sinr_db", "legendFormat": "SCC {{scc_index}} - {{band}}", "refId": "A"}],
