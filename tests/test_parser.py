@@ -59,6 +59,8 @@ class ParseCellwanStatusTests(unittest.TestCase):
     def test_update_metrics_replaces_old_labeled_series(self):
         first = cellwan_exporter.parse_cellwan_status(self.sample_output)
         second = cellwan_exporter.parse_cellwan_status(self.sample_output)
+        second["Network In Use"] = "Fallback LTE"
+        second["Current Access Technology"] = "LTE"
         second["Current Band"] = "LTE_BC1"
         second["Cell ID"] = "999"
         second["eNodeB ID"] = "777"
@@ -85,6 +87,12 @@ class ParseCellwanStatusTests(unittest.TestCase):
         self.assertEqual(list(cellwan_exporter.cellwan_scc_rssi.collect())[0].samples, [])
         ca_band_labels = [sample.labels for sample in list(cellwan_exporter.cellwan_ca_band_active.collect())[0].samples]
         self.assertEqual(ca_band_labels, [{"band": "B1"}])
+        network_labels = [sample.labels for sample in list(cellwan_exporter.cellwan_network_info.collect())[0].samples]
+        self.assertEqual(network_labels, [{"network": "Fallback LTE"}])
+        access_labels = [sample.labels for sample in list(cellwan_exporter.cellwan_access_technology_info.collect())[0].samples]
+        self.assertEqual(access_labels, [{"access_technology": "LTE"}])
+        ca_combination_labels = [sample.labels for sample in list(cellwan_exporter.cellwan_ca_combination_info.collect())[0].samples]
+        self.assertEqual(ca_combination_labels, [{"ca_combination": "BC1"}])
 
     def test_mark_scrape_failed_clears_router_metrics(self):
         data = cellwan_exporter.parse_cellwan_status(self.sample_output)
@@ -95,6 +103,9 @@ class ParseCellwanStatusTests(unittest.TestCase):
         self.assertEqual(cellwan_exporter.cellwan_status_up._value.get(), 0.0)
         self.assertEqual(cellwan_exporter.cellwan_scrape_success._value.get(), 0.0)
         self.assertEqual(list(cellwan_exporter.cellwan_primary_rssi.collect())[0].samples, [])
+        self.assertEqual(list(cellwan_exporter.cellwan_network_info.collect())[0].samples, [])
+        self.assertEqual(list(cellwan_exporter.cellwan_access_technology_info.collect())[0].samples, [])
+        self.assertEqual(list(cellwan_exporter.cellwan_ca_combination_info.collect())[0].samples, [])
         self.assertEqual(list(cellwan_exporter.cellwan_ca_band_active.collect())[0].samples, [])
         info_samples = list(cellwan_exporter.cellwan_info.collect())[0].samples
         self.assertEqual(info_samples[0].labels["network"], "N/A")

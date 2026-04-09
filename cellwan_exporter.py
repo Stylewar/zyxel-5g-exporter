@@ -68,6 +68,9 @@ cellwan_neighbor_rsrp = Gauge('cellwan_neighbor_rsrp_dbm', 'Neighbor cell RSRP i
 cellwan_neighbor_rsrq = Gauge('cellwan_neighbor_rsrq_db', 'Neighbor cell RSRQ in dB', ['neighbor_index', 'neighbor_type', 'mode', 'physical_cell_id', 'rfcn'])
 
 # Helper metrics for current connection composition
+cellwan_network_info = Gauge('cellwan_network_info', 'Current network label for the active cellular WAN', ['network'])
+cellwan_access_technology_info = Gauge('cellwan_access_technology_info', 'Current access technology label for the active cellular WAN', ['access_technology'])
+cellwan_ca_combination_info = Gauge('cellwan_ca_combination_info', 'Current carrier aggregation combination label', ['ca_combination'])
 cellwan_ca_band_active = Gauge('cellwan_ca_band_active', 'Whether a carrier aggregation band is currently active', ['band'])
 
 # Lock for thread safety
@@ -107,6 +110,9 @@ LABELED_METRICS = (
     cellwan_neighbor_rssi,
     cellwan_neighbor_rsrp,
     cellwan_neighbor_rsrq,
+    cellwan_network_info,
+    cellwan_access_technology_info,
+    cellwan_ca_combination_info,
     cellwan_ca_band_active,
 )
 
@@ -274,6 +280,14 @@ def update_metrics(data):
             'access_technology': data.get('Current Access Technology', 'N/A'),
             'ca_combination': data.get('Current CA combination', 'N/A')
         })
+
+        cellwan_network_info.labels(network=data.get('Network In Use', 'N/A')).set(1)
+        cellwan_access_technology_info.labels(
+            access_technology=data.get('Current Access Technology', 'N/A')
+        ).set(1)
+        cellwan_ca_combination_info.labels(
+            ca_combination=data.get('Current CA combination', 'N/A')
+        ).set(1)
 
         cellwan_scrape_success.set(1)
         status = data.get('Status', 'Down')

@@ -13,7 +13,7 @@ starts the exporter only.
   PCI, and bandwidth
 - Collects NR5G metrics such as RSRP, RSRQ, SINR, PCI, RFCN, and bandwidth
 - Collects secondary-carrier and neighbor-cell metrics
-- Exposes `cellwan_info`, `cellwan_status_up`, `cellwan_scrape_success`, and `cellwan_ca_band_active`
+- Exposes `cellwan_info`, `cellwan_status_up`, `cellwan_scrape_success`, `cellwan_network_info`, `cellwan_access_technology_info`, `cellwan_ca_combination_info`, and `cellwan_ca_band_active`
 - Clears stale SCC and neighbor series when the router state changes
 - Avoids exposing IMEI and module software version
 - Includes CI for Python syntax, parser regression tests, linting, and
@@ -87,6 +87,12 @@ Important exported metrics:
   `1` when the router reports the cellular WAN as up
 - `cellwan_scrape_success`
   `1` when the latest SSH scrape succeeded
+- `cellwan_network_info`
+  Current network label as a dedicated helper metric
+- `cellwan_access_technology_info`
+  Current access technology label as a dedicated helper metric
+- `cellwan_ca_combination_info`
+  Current CA combination label as a dedicated helper metric
 - `cellwan_ca_band_active`
   `1` for each currently active LTE / NR carrier-aggregation band, labeled as `B1`, `B3`, `n28`, and so on
 - `cellwan_primary_*`

@@ -49,36 +49,33 @@
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "fieldConfig": {"defaults": {"custom": {"align": "left", "cellOptions": {"type": "auto"}, "inspect": false}, "mappings": [], "noValue": "Unavailable", "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "blue"}, "mappings": [], "noValue": "Unavailable", "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
       "gridPos": {"h": 5, "w": 8, "x": 4, "y": 0},
       "id": 2,
-      "options": {"cellHeight": "sm", "footer": {"show": false}, "showHeader": false},
-      "targets": [{"expr": "cellwan_info", "format": "time_series", "instant": true, "refId": "A"}],
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "name"},
+      "targets": [{"expr": "cellwan_network_info", "instant": true, "legendFormat": "{{network}}", "refId": "A"}],
       "title": "Network",
-      "transformations": [{"id": "labelsToFields", "options": {"mode": "columns"}}, {"id": "organize", "options": {"excludeByName": {"Time": true, "Value": true, "access_technology": true, "ca_combination": true}, "indexByName": {"network": 0}, "renameByName": {"network": "Network"}}}],
-      "type": "table"
+      "type": "stat"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "fieldConfig": {"defaults": {"custom": {"align": "left", "cellOptions": {"type": "auto"}, "inspect": false}, "mappings": [], "noValue": "Unavailable", "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "green"}, "mappings": [], "noValue": "Unavailable", "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
       "gridPos": {"h": 5, "w": 4, "x": 12, "y": 0},
       "id": 3,
-      "options": {"cellHeight": "sm", "footer": {"show": false}, "showHeader": false},
-      "targets": [{"expr": "cellwan_info", "format": "time_series", "instant": true, "refId": "A"}],
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "name"},
+      "targets": [{"expr": "cellwan_access_technology_info", "instant": true, "legendFormat": "{{access_technology}}", "refId": "A"}],
       "title": "Access Technology",
-      "transformations": [{"id": "labelsToFields", "options": {"mode": "columns"}}, {"id": "organize", "options": {"excludeByName": {"Time": true, "Value": true, "network": true, "ca_combination": true}, "indexByName": {"access_technology": 0}, "renameByName": {"access_technology": "Access Technology"}}}],
-      "type": "table"
+      "type": "stat"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "fieldConfig": {"defaults": {"custom": {"align": "left", "cellOptions": {"type": "auto"}, "inspect": false}, "mappings": [], "noValue": "Unavailable", "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "orange"}, "mappings": [], "noValue": "Unavailable", "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
       "gridPos": {"h": 5, "w": 8, "x": 16, "y": 0},
       "id": 4,
-      "options": {"cellHeight": "sm", "footer": {"show": false}, "showHeader": false},
-      "targets": [{"expr": "cellwan_info", "format": "time_series", "instant": true, "refId": "A"}],
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "name"},
+      "targets": [{"expr": "cellwan_ca_combination_info", "instant": true, "legendFormat": "{{ca_combination}}", "refId": "A"}],
       "title": "CA Combination",
-      "transformations": [{"id": "labelsToFields", "options": {"mode": "columns"}}, {"id": "organize", "options": {"excludeByName": {"Time": true, "Value": true, "network": true, "access_technology": true}, "indexByName": {"ca_combination": 0}, "renameByName": {"ca_combination": "CA Combination"}}}],
-      "type": "table"
+      "type": "stat"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
