@@ -67,6 +67,9 @@ cellwan_neighbor_rssi = Gauge('cellwan_neighbor_rssi_dbm', 'Neighbor cell RSSI i
 cellwan_neighbor_rsrp = Gauge('cellwan_neighbor_rsrp_dbm', 'Neighbor cell RSRP in dBm', ['neighbor_index', 'neighbor_type', 'mode', 'physical_cell_id', 'rfcn'])
 cellwan_neighbor_rsrq = Gauge('cellwan_neighbor_rsrq_db', 'Neighbor cell RSRQ in dB', ['neighbor_index', 'neighbor_type', 'mode', 'physical_cell_id', 'rfcn'])
 
+# Helper metrics for current connection composition
+cellwan_ca_band_active = Gauge('cellwan_ca_band_active', 'Whether a carrier aggregation band is currently active', ['band'])
+
 # Lock for thread safety
 metrics_lock = Lock()
 
@@ -104,6 +107,7 @@ LABELED_METRICS = (
     cellwan_neighbor_rssi,
     cellwan_neighbor_rsrp,
     cellwan_neighbor_rsrq,
+    cellwan_ca_band_active,
 )
 
 
@@ -203,6 +207,53 @@ def clear_router_metrics():
         metric.clear()
 
 
+def normalize_band_name(value):
+    """Normalize Zyxel band strings to concise Grafana-friendly values."""
+    if not value or value in ('N/A', 'unknown'):
+        return None
+
+    band = value.strip()
+
+    lte_match = re.search(r'(?:LTE_)?BC(\d+)', band, re.IGNORECASE)
+    if lte_match:
+        return f"B{int(lte_match.group(1))}"
+
+    nr_match = re.search(r'(?:NR5G_)?N(\d+)', band, re.IGNORECASE)
+    if nr_match:
+        return f"n{int(nr_match.group(1))}"
+
+    return band
+
+
+def iter_active_ca_bands(data):
+    """Yield normalized active LTE/NR carrier aggregation bands for the current scrape."""
+    bands = set()
+
+    for raw_band in (data.get('Current Band'), data.get('Current CA combination')):
+        if not raw_band:
+            continue
+        for part in raw_band.split(','):
+            normalized = normalize_band_name(part)
+            if normalized:
+                bands.add(normalized)
+
+    nr5g = data.get('nr5g', {})
+    normalized_nr_band = normalize_band_name(nr5g.get('Band'))
+    if normalized_nr_band:
+        bands.add(normalized_nr_band)
+
+    for scc_info in data.get('scc', {}).values():
+        normalized_scc_band = normalize_band_name(scc_info.get('Band'))
+        if normalized_scc_band:
+            bands.add(normalized_scc_band)
+
+    def sort_key(band):
+        prefix = 0 if band.startswith('B') else 1
+        return (prefix, int(re.search(r'(\d+)$', band).group(1)) if re.search(r'(\d+)$', band) else band)
+
+    return sorted(bands, key=sort_key)
+
+
 def mark_scrape_failed():
     """Reset scrape-dependent metrics after an SSH or parsing failure."""
     with metrics_lock:
@@ -227,6 +278,9 @@ def update_metrics(data):
         cellwan_scrape_success.set(1)
         status = data.get('Status', 'Down')
         cellwan_status_up.set(1 if status == 'Up' else 0)
+
+        for active_band in iter_active_ca_bands(data):
+            cellwan_ca_band_active.labels(band=active_band).set(1)
 
         band = data.get('Current Band', 'unknown')
         cell_id = data.get('Cell ID', 'unknown')

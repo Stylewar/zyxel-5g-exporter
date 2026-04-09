@@ -49,12 +49,21 @@ class ParseCellwanStatusTests(unittest.TestCase):
         self.assertEqual(neighbors[0]["rfcn"], "1600")
         self.assertEqual(neighbors[-1]["physical_cell_id"], "120")
 
+    def test_normalize_band_name(self):
+        self.assertEqual(cellwan_exporter.normalize_band_name("LTE_BC20"), "B20")
+        self.assertEqual(cellwan_exporter.normalize_band_name("BC7"), "B7")
+        self.assertEqual(cellwan_exporter.normalize_band_name("NR5G_N28"), "n28")
+        self.assertEqual(cellwan_exporter.normalize_band_name("n41"), "n41")
+        self.assertIsNone(cellwan_exporter.normalize_band_name("N/A"))
+
     def test_update_metrics_replaces_old_labeled_series(self):
         first = cellwan_exporter.parse_cellwan_status(self.sample_output)
         second = cellwan_exporter.parse_cellwan_status(self.sample_output)
         second["Current Band"] = "LTE_BC1"
         second["Cell ID"] = "999"
         second["eNodeB ID"] = "777"
+        second["Current CA combination"] = "BC1"
+        second["nr5g"] = {}
         second["scc"] = {}
         second["neighbors"] = []
 
@@ -74,6 +83,8 @@ class ParseCellwanStatusTests(unittest.TestCase):
         )
         self.assertEqual(list(cellwan_exporter.cellwan_neighbor_rssi.collect())[0].samples, [])
         self.assertEqual(list(cellwan_exporter.cellwan_scc_rssi.collect())[0].samples, [])
+        ca_band_labels = [sample.labels for sample in list(cellwan_exporter.cellwan_ca_band_active.collect())[0].samples]
+        self.assertEqual(ca_band_labels, [{"band": "B1"}])
 
     def test_mark_scrape_failed_clears_router_metrics(self):
         data = cellwan_exporter.parse_cellwan_status(self.sample_output)
@@ -84,8 +95,17 @@ class ParseCellwanStatusTests(unittest.TestCase):
         self.assertEqual(cellwan_exporter.cellwan_status_up._value.get(), 0.0)
         self.assertEqual(cellwan_exporter.cellwan_scrape_success._value.get(), 0.0)
         self.assertEqual(list(cellwan_exporter.cellwan_primary_rssi.collect())[0].samples, [])
+        self.assertEqual(list(cellwan_exporter.cellwan_ca_band_active.collect())[0].samples, [])
         info_samples = list(cellwan_exporter.cellwan_info.collect())[0].samples
         self.assertEqual(info_samples[0].labels["network"], "N/A")
+
+    def test_update_metrics_emits_active_ca_bands(self):
+        data = cellwan_exporter.parse_cellwan_status(self.sample_output)
+
+        cellwan_exporter.update_metrics(data)
+
+        labels = [sample.labels["band"] for sample in list(cellwan_exporter.cellwan_ca_band_active.collect())[0].samples]
+        self.assertEqual(labels, ["B1", "B3", "B7", "B20", "n28"])
 
     @mock.patch("cellwan_exporter.subprocess.run")
     def test_fetch_uses_argument_list_without_shell(self, run_mock):
